@@ -19,7 +19,6 @@ Um gerenciador de macros para teclado e mouse com interface gráfica moderna em 
 - 🌙 **Tema Dark** - Interface moderna e elegante
 - ⏳ **Contagem regressiva** - Prepare-se antes de gravar
 
-## 📸 Screenshot
 
 <!-- Adicione uma screenshot aqui -->
 
