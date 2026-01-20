@@ -284,7 +284,8 @@ class MainWindow(QMainWindow):
         """Cria uma nova macro."""
         macro = Macro(name="Nova Macro")
         self._macros.append(macro)
-        self._macro_list.add_macro(macro)
+        self._macro_list.set_macros(self._macros)  # Atualiza sem duplicar
+        self._macro_list._select_macro_by_id(macro.id)
         self._macro_editor.load_macro(macro)
         self._save_macros()
         self._update_status("Nova macro criada")
@@ -297,8 +298,10 @@ class MainWindow(QMainWindow):
     
     def _on_recording_finished(self, macro: Macro) -> None:
         """Callback quando a gravação termina."""
+        # Adiciona na lista principal e na UI (add_macro já adiciona em _macros)
         self._macros.append(macro)
-        self._macro_list.add_macro(macro)
+        self._macro_list.set_macros(self._macros)  # Atualiza a lista sem duplicar
+        self._macro_list._select_macro_by_id(macro.id)
         self._macro_editor.load_macro(macro)
         self._save_macros()
         self._register_hotkeys()
@@ -350,7 +353,8 @@ class MainWindow(QMainWindow):
         """Duplica uma macro."""
         new_macro = macro.duplicate()
         self._macros.append(new_macro)
-        self._macro_list.add_macro(new_macro)
+        self._macro_list.set_macros(self._macros)  # Atualiza sem duplicar
+        self._macro_list._select_macro_by_id(new_macro.id)
         self._macro_editor.load_macro(new_macro)
         self._save_macros()
         self._update_status(f"Macro duplicada: {new_macro.name}")
@@ -431,8 +435,8 @@ class MainWindow(QMainWindow):
                 imported = self._storage.import_macros(Path(file_path))
                 for macro in imported:
                     self._macros.append(macro)
-                    self._macro_list.add_macro(macro)
                 
+                self._macro_list.set_macros(self._macros)  # Atualiza sem duplicar
                 self._save_macros()
                 self._register_hotkeys()
                 self._update_status(f"{len(imported)} macros importadas")

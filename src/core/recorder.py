@@ -97,7 +97,13 @@ class MacroRecorder:
     def _add_action(self, action: MacroAction) -> None:
         """Adiciona uma ação à lista."""
         current_time = time.time() * 1000
-        action.delay_before = current_time - self._last_action_time
+        
+        # Primeira ação não tem delay (ignorar tempo da contagem regressiva)
+        if len(self._actions) == 0:
+            action.delay_before = 0
+        else:
+            action.delay_before = current_time - self._last_action_time
+        
         self._last_action_time = current_time
         
         self._actions.append(action)

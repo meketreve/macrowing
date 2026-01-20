@@ -1,6 +1,7 @@
 """
 Widget de gravação de macros.
 """
+import keyboard
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QCheckBox, QProgressBar, QFrame, QDialog, QSpinBox
@@ -36,7 +37,7 @@ class MacroRecorderDialog(QDialog):
         # Instruções
         instructions = QLabel(
             "Clique em 'Iniciar' e execute as ações que deseja gravar.\n"
-            "Pressione 'Parar' ou ESC quando terminar."
+            "Pressione F10 ou ESC para parar a gravação."
         )
         instructions.setWordWrap(True)
         instructions.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -176,6 +177,12 @@ class MacroRecorderDialog(QDialog):
         self._recorder.record_mouse_movement = self.record_movement_check.isChecked()
         self._recorder.record_key_release = self.record_release_check.isChecked()
         
+        # Registra hotkey global para parar (F10)
+        try:
+            keyboard.add_hotkey('f10', self._on_stop_hotkey, suppress=True)
+        except Exception:
+            pass  # Ignora se não conseguir registrar
+        
         # Inicia
         self._recorder.start()
         
@@ -185,12 +192,23 @@ class MacroRecorderDialog(QDialog):
         self.record_movement_check.setEnabled(False)
         self.record_release_check.setEnabled(False)
         self.countdown_spin.setEnabled(False)
-        self.status_label.setText("Gravando... Execute suas ações")
+        self.status_label.setText("Gravando... Pressione F10 para parar")
         self.recording_indicator.show()
         self._blink_timer.start(500)
     
+    def _on_stop_hotkey(self) -> None:
+        """Callback quando a hotkey de parar é pressionada."""
+        # Usa QTimer para chamar no thread principal
+        QTimer.singleShot(0, self._stop_recording)
+    
     def _stop_recording(self) -> None:
         """Para a gravação."""
+        # Remove hotkey global
+        try:
+            keyboard.remove_hotkey('f10')
+        except Exception:
+            pass  # Ignora se não estava registrada
+        
         # Para timers
         self._blink_timer.stop()
         self._countdown_timer.stop()
@@ -246,6 +264,12 @@ class MacroRecorderDialog(QDialog):
     
     def closeEvent(self, event):
         """Garante que a gravação para ao fechar."""
+        # Remove hotkey global
+        try:
+            keyboard.remove_hotkey('f10')
+        except Exception:
+            pass
+        
         self._countdown_timer.stop()
         if self._recorder.is_recording:
             self._recorder.stop()
