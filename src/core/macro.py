@@ -2,7 +2,7 @@
 Modelo de dados para macros e ações.
 """
 from dataclasses import dataclass, field
-from typing import Literal, Any
+from typing import Any
 from enum import Enum
 import uuid
 import time

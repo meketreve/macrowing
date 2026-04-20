@@ -449,7 +449,7 @@ class MacroEditorWidget(QWidget):
         self._current_macro.name = name
         self._current_macro.hotkey = self.hotkey_edit.text()
         self._current_macro.loop_count = self.loop_count_spin.value()
-        self._current_macro.loop_delay = self.loop_delay_spin.value()
+        self._current_macro.loop_delay = float(self.loop_delay_spin.value())
         
         self.macro_saved.emit(self._current_macro)
         self.title_label.setText(f"📝 Editando: {name}")

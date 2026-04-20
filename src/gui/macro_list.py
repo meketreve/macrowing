@@ -150,13 +150,16 @@ class MacroListWidget(QWidget):
         """Filtra as macros com base no texto de busca."""
         self._refresh_list()
     
-    def _select_macro_by_id(self, macro_id: str) -> None:
+    def select_macro_by_id(self, macro_id: str) -> None:
         """Seleciona uma macro pelo ID."""
         for i in range(self.list_widget.count()):
             item = self.list_widget.item(i)
             if isinstance(item, MacroListItem) and item.macro.id == macro_id:
                 self.list_widget.setCurrentItem(item)
                 break
+
+    def _select_macro_by_id(self, macro_id: str) -> None:
+        self.select_macro_by_id(macro_id)
     
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
         """Callback quando um item é clicado."""

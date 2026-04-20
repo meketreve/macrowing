@@ -24,6 +24,14 @@ from ..core.player import MacroPlayer, EasingType
 from ..core.hotkey_manager import HotkeyManager
 from ..utils.helpers import get_settings_file
 
+_EASING_MAP = {
+    0: EasingType.LINEAR,
+    1: EasingType.EASE_OUT_QUAD,
+    2: EasingType.EASE_OUT_CUBIC,
+    3: EasingType.EASE_OUT_EXPO,
+    4: EasingType.EASE_IN_OUT,
+}
+
 
 class MainWindow(QMainWindow):
     """Janela principal da aplicação."""
@@ -240,14 +248,7 @@ class MainWindow(QMainWindow):
         self._player.smooth_mouse_max_duration = self._settings.get("smooth_mouse_max_duration", 800)
         
         easing_index = self._settings.get("smooth_mouse_easing_index", 2)
-        easing_map = {
-            0: EasingType.LINEAR,
-            1: EasingType.EASE_OUT_QUAD,
-            2: EasingType.EASE_OUT_CUBIC,
-            3: EasingType.EASE_OUT_EXPO,
-            4: EasingType.EASE_IN_OUT,
-        }
-        self._player.smooth_mouse_easing = easing_map.get(easing_index, EasingType.EASE_OUT_CUBIC)
+        self._player.smooth_mouse_easing = _EASING_MAP.get(easing_index, EasingType.EASE_OUT_CUBIC)
     
     def _save_settings(self) -> None:
         """Salva as configurações."""
@@ -284,8 +285,8 @@ class MainWindow(QMainWindow):
         """Cria uma nova macro."""
         macro = Macro(name="Nova Macro")
         self._macros.append(macro)
-        self._macro_list.set_macros(self._macros)  # Atualiza sem duplicar
-        self._macro_list._select_macro_by_id(macro.id)
+        self._macro_list.set_macros(self._macros)
+        self._macro_list.select_macro_by_id(macro.id)
         self._macro_editor.load_macro(macro)
         self._save_macros()
         self._update_status("Nova macro criada")
@@ -298,10 +299,9 @@ class MainWindow(QMainWindow):
     
     def _on_recording_finished(self, macro: Macro) -> None:
         """Callback quando a gravação termina."""
-        # Adiciona na lista principal e na UI (add_macro já adiciona em _macros)
         self._macros.append(macro)
-        self._macro_list.set_macros(self._macros)  # Atualiza a lista sem duplicar
-        self._macro_list._select_macro_by_id(macro.id)
+        self._macro_list.set_macros(self._macros)
+        self._macro_list.select_macro_by_id(macro.id)
         self._macro_editor.load_macro(macro)
         self._save_macros()
         self._register_hotkeys()
@@ -353,8 +353,8 @@ class MainWindow(QMainWindow):
         """Duplica uma macro."""
         new_macro = macro.duplicate()
         self._macros.append(new_macro)
-        self._macro_list.set_macros(self._macros)  # Atualiza sem duplicar
-        self._macro_list._select_macro_by_id(new_macro.id)
+        self._macro_list.set_macros(self._macros)
+        self._macro_list.select_macro_by_id(new_macro.id)
         self._macro_editor.load_macro(new_macro)
         self._save_macros()
         self._update_status(f"Macro duplicada: {new_macro.name}")
@@ -370,12 +370,18 @@ class MainWindow(QMainWindow):
         for macro in self._macros:
             if macro.id == macro_id:
                 macro.enabled = not macro.enabled
-                
+
                 if macro.enabled and macro.hotkey:
-                    self._hotkey_manager.enable_binding(macro_id)
+                    if not self._hotkey_manager.enable_binding(macro_id):
+                        self._hotkey_manager.bind(
+                            macro_id,
+                            macro.hotkey,
+                            lambda m=macro: self._play_macro(m),
+                            f"Executar: {macro.name}"
+                        )
                 else:
                     self._hotkey_manager.disable_binding(macro_id)
-                
+
                 self._save_macros()
                 break
     
@@ -436,7 +442,7 @@ class MainWindow(QMainWindow):
                 for macro in imported:
                     self._macros.append(macro)
                 
-                self._macro_list.set_macros(self._macros)  # Atualiza sem duplicar
+                self._macro_list.set_macros(self._macros)
                 self._save_macros()
                 self._register_hotkeys()
                 self._update_status(f"{len(imported)} macros importadas")
@@ -487,16 +493,8 @@ class MainWindow(QMainWindow):
         self._player.smooth_mouse_min_duration = settings.get("smooth_mouse_min_duration", 50)
         self._player.smooth_mouse_max_duration = settings.get("smooth_mouse_max_duration", 800)
         
-        # Mapeia índice do combo para EasingType
         easing_index = settings.get("smooth_mouse_easing_index", 2)
-        easing_map = {
-            0: EasingType.LINEAR,
-            1: EasingType.EASE_OUT_QUAD,
-            2: EasingType.EASE_OUT_CUBIC,
-            3: EasingType.EASE_OUT_EXPO,
-            4: EasingType.EASE_IN_OUT,
-        }
-        self._player.smooth_mouse_easing = easing_map.get(easing_index, EasingType.EASE_OUT_CUBIC)
+        self._player.smooth_mouse_easing = _EASING_MAP.get(easing_index, EasingType.EASE_OUT_CUBIC)
     
     # === Utilitários ===
     

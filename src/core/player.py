@@ -4,7 +4,7 @@ Reprodutor de macros - executa ações gravadas.
 import time
 import math
 import threading
-from typing import Callable, Optional
+from typing import Callable
 from enum import Enum
 from pynput import keyboard, mouse
 from pynput.keyboard import Key, Controller as KeyboardController
@@ -164,8 +164,8 @@ class MacroPlayer:
         self._playing = False
         self._paused = False
         self._stop_requested = False
-        self._current_thread: Optional[threading.Thread] = None
-        self._current_macro: Optional[Macro] = None
+        self._current_thread: threading.Thread | None = None
+        self._current_macro: Macro | None = None
         self._current_loop = 0
         
         # Configurações de movimento suave
@@ -177,13 +177,13 @@ class MacroPlayer:
         self.smooth_mouse_steps_per_second = 120  # FPS do movimento
         
         # Callbacks
-        self.on_started: Optional[Callable[[Macro], None]] = None
-        self.on_stopped: Optional[Callable[[Macro], None]] = None
-        self.on_paused: Optional[Callable[[Macro], None]] = None
-        self.on_resumed: Optional[Callable[[Macro], None]] = None
-        self.on_action_executed: Optional[Callable[[MacroAction, int], None]] = None
-        self.on_loop_completed: Optional[Callable[[int], None]] = None
-        self.on_error: Optional[Callable[[Exception], None]] = None
+        self.on_started: Callable[[Macro], None] | None = None
+        self.on_stopped: Callable[[Macro], None] | None = None
+        self.on_paused: Callable[[Macro], None] | None = None
+        self.on_resumed: Callable[[Macro], None] | None = None
+        self.on_action_executed: Callable[[MacroAction, int], None] | None = None
+        self.on_loop_completed: Callable[[int], None] | None = None
+        self.on_error: Callable[[Exception], None] | None = None
     
     @property
     def is_playing(self) -> bool:
@@ -194,7 +194,7 @@ class MacroPlayer:
         return self._paused
     
     @property
-    def current_macro(self) -> Optional[Macro]:
+    def current_macro(self) -> Macro | None:
         return self._current_macro
     
     @property
@@ -220,19 +220,20 @@ class MacroPlayer:
     
     def stop(self) -> None:
         """Para a reprodução da macro."""
+        was_playing = self._playing
+        macro = self._current_macro
         self._stop_requested = True
         self._paused = False
-        
+
         if self._current_thread and self._current_thread.is_alive():
             self._current_thread.join(timeout=1)
-        
-        if self._playing and self._current_macro:
-            if self.on_stopped:
-                self.on_stopped(self._current_macro)
-        
+
         self._playing = False
         self._current_macro = None
         self._current_thread = None
+
+        if was_playing and macro and self.on_stopped:
+            self.on_stopped(macro)
     
     def pause(self) -> None:
         """Pausa a reprodução."""
@@ -340,7 +341,7 @@ class MacroPlayer:
             elif action.action_type == ActionType.MOUSE_MOVE:
                 x = action.data.get("x", 0)
                 y = action.data.get("y", 0)
-                self._mouse.position = (x, y)
+                self._smooth_mouse_move(x, y)
             
             elif action.action_type == ActionType.MOUSE_SCROLL:
                 dx = action.data.get("dx", 0)
@@ -352,7 +353,8 @@ class MacroPlayer:
                 self._sleep_ms(ms)
         
         except Exception as e:
-            print(f"Erro ao executar ação {action.action_type}: {e}")
+            if self.on_error:
+                self.on_error(e)
     
     def _smooth_mouse_move(self, target_x: int, target_y: int) -> None:
         """
@@ -448,11 +450,6 @@ class MacroPlayer:
     def _mouse_click(self, x: int, y: int, button_str: str) -> None:
         """Clica em uma posição (movimento instantâneo)."""
         self._mouse.position = (x, y)
-        button = self._str_to_button(button_str)
-        self._mouse.press(button)
-    
-    def _mouse_click_at_current(self, button_str: str) -> None:
-        """Clica na posição atual do mouse."""
         button = self._str_to_button(button_str)
         self._mouse.press(button)
     

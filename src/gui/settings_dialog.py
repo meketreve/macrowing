@@ -1,6 +1,9 @@
 """
 Diálogo de configurações.
 """
+import os
+import sys
+import subprocess
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLineEdit, QPushButton, QLabel, QCheckBox, QGroupBox,
@@ -10,6 +13,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import pyqtSignal, Qt
 
 from .macro_editor import HotkeyLineEdit
+from ..utils.helpers import get_data_dir, get_macros_file
 
 
 class SettingsDialog(QDialog):
@@ -247,7 +251,6 @@ class SettingsDialog(QDialog):
             self._settings.get("smooth_mouse_max_duration", 800)
         )
         
-        from ..utils.helpers import get_data_dir
         self.data_location_label.setText(str(get_data_dir()))
     
     def _get_settings(self) -> dict:
@@ -280,9 +283,13 @@ class SettingsDialog(QDialog):
     
     def _open_data_folder(self) -> None:
         """Abre a pasta de dados no explorador."""
-        import os
-        from ..utils.helpers import get_data_dir
-        os.startfile(str(get_data_dir()))
+        data_dir = str(get_data_dir())
+        if sys.platform == "win32":
+            os.startfile(data_dir)
+        elif sys.platform == "darwin":
+            subprocess.run(["open", data_dir])
+        else:
+            subprocess.run(["xdg-open", data_dir])
     
     def _export_all(self) -> None:
         """Exporta todas as macros."""
@@ -295,7 +302,6 @@ class SettingsDialog(QDialog):
         
         if file_path:
             # Será implementado pela janela principal
-            from ..utils.helpers import get_macros_file
             import shutil
             try:
                 shutil.copy2(get_macros_file(), file_path)
@@ -306,16 +312,15 @@ class SettingsDialog(QDialog):
                 QMessageBox.critical(
                     self, "Erro", f"Falha ao exportar: {e}"
                 )
-    
+
     def _import_macros(self) -> None:
-        """Importa macros de um arquivo."""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Importar Macros",
             "",
             "JSON Files (*.json)"
         )
-        
+
         if file_path:
             QMessageBox.information(
                 self, "Info",

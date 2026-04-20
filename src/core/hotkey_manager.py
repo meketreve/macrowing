@@ -3,7 +3,7 @@ Gerenciador de hotkeys globais.
 """
 import keyboard
 import threading
-from typing import Callable, Optional
+from typing import Callable
 from dataclasses import dataclass
 
 
@@ -22,8 +22,8 @@ class HotkeyManager:
     def __init__(self):
         self._bindings: dict[str, HotkeyBinding] = {}
         self._active = False
-        self._panic_key: Optional[str] = "escape"
-        self._on_panic: Optional[Callable[[], None]] = None
+        self._panic_key: str | None = "escape"
+        self._on_panic: Callable[[], None] | None = None
         
         # Lock para thread safety
         self._lock = threading.Lock()
@@ -33,11 +33,11 @@ class HotkeyManager:
         return self._active
     
     @property
-    def panic_key(self) -> Optional[str]:
+    def panic_key(self) -> str | None:
         return self._panic_key
     
     @panic_key.setter
-    def panic_key(self, value: Optional[str]) -> None:
+    def panic_key(self, value: str | None) -> None:
         """Define a tecla de pânico (para todas as macros)."""
         # Remove binding anterior
         if self._panic_key and f"__panic_{self._panic_key}" in self._bindings:
