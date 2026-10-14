@@ -1,10 +1,11 @@
 """
 Gerenciador de hotkeys globais.
 """
-import keyboard
 import threading
 from typing import Callable
 from dataclasses import dataclass
+
+from .hotkey_backend import HotkeyBackend, create_backend
 
 
 @dataclass
@@ -17,13 +18,16 @@ class HotkeyBinding:
 
 
 class HotkeyManager:
-    """Gerencia hotkeys globais usando a biblioteca keyboard."""
+    """Gerencia hotkeys globais usando o backend da plataforma."""
     
     def __init__(self):
         self._bindings: dict[str, HotkeyBinding] = {}
         self._active = False
         self._panic_key: str | None = "escape"
         self._on_panic: Callable[[], None] | None = None
+        
+        # Backend de hotkeys (keyboard no Windows, pynput no Linux/X11)
+        self._backend: HotkeyBackend = create_backend()
         
         # Lock para thread safety
         self._lock = threading.Lock()
@@ -90,12 +94,11 @@ class HotkeyManager:
                 # Normaliza o hotkey
                 hotkey_normalized = hotkey.lower().replace(" ", "")
                 
-                # Registra no keyboard
-                keyboard.add_hotkey(
+                # Registra no backend
+                self._backend.add(
                     hotkey_normalized,
                     callback,
                     suppress=False,
-                    trigger_on_release=False
                 )
                 
                 # Salva binding
@@ -125,7 +128,7 @@ class HotkeyManager:
         binding = self._bindings[id]
         
         try:
-            keyboard.remove_hotkey(binding.hotkey)
+            self._backend.remove(binding.hotkey)
         except Exception:
             pass
         
@@ -161,6 +164,7 @@ class HotkeyManager:
         
         self._active = False
         self.unbind_all()
+        self._backend.stop()
     
     def enable_binding(self, id: str) -> bool:
         """Ativa uma binding específica."""
@@ -173,11 +177,7 @@ class HotkeyManager:
                 return True
             
             try:
-                keyboard.add_hotkey(
-                    binding.hotkey,
-                    binding.callback,
-                    suppress=False
-                )
+                self._backend.add(binding.hotkey, binding.callback, suppress=False)
                 binding.active = True
                 return True
             except Exception:
@@ -194,7 +194,7 @@ class HotkeyManager:
                 return True
             
             try:
-                keyboard.remove_hotkey(binding.hotkey)
+                self._backend.remove(binding.hotkey)
                 binding.active = False
                 return True
             except Exception:

@@ -4,7 +4,7 @@ Um gerenciador de macros para teclado e mouse com interface gráfica moderna em 
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![PyQt6](https://img.shields.io/badge/PyQt6-6.6+-green.svg)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## ✨ Funcionalidades
@@ -39,16 +39,37 @@ cd macrowing
 pip install -r requirements.txt
 
 # Execute
-python main.py
+python main.py        # Windows
+./run.sh              # Linux
 ```
+
+## 🐧 Linux
+
+O app roda a partir do código-fonte (não há binário). Requisitos e ressalvas:
+
+```bash
+pip install -r requirements.txt
+./run.sh
+```
+
+- **X11** é o ambiente suportado: gravação, reprodução e hotkeys globais
+  funcionam pelo `pynput`, **sem precisar de root**.
+- **Wayland**: `pynput` não captura input global nem injeta eventos fora do
+  XWayland. Nesse caso, gravação/hotkeys globais ficam limitadas — rode via
+  XWayland ou mude para uma sessão X11.
+- **Hotkeys globais**: no Linux o backend é o `pynput`; no Windows continua
+  sendo a biblioteca `keyboard`.
+- **Iniciar com o sistema**: cria `~/.config/autostart/macrowing.desktop`
+  (no Windows, uma entrada em `HKCU\...\Run`).
+- Configurações e macros ficam em `~/.config/MacroWing/` (respeita
+  `XDG_CONFIG_HOME`).
 
 ## 📦 Dependências
 
 - Python 3.10+
 - PyQt6
 - pynput
-- keyboard
-- pywin32
+- **Windows apenas:** keyboard, pywin32
 
 ## 🎯 Como Usar
 
@@ -101,6 +122,7 @@ macrowing/
     │   ├── recorder.py     # Gravador
     │   ├── player.py       # Reprodutor
     │   ├── hotkey_manager.py
+    │   ├── hotkey_backend.py  # Backend de hotkeys (keyboard/pynput)
     │   └── storage.py      # Persistência
     ├── gui/                # Interface gráfica
     │   ├── main_window.py
@@ -111,7 +133,8 @@ macrowing/
     │   ├── tray_icon.py
     │   └── styles.py
     └── utils/
-        └── helpers.py
+        ├── helpers.py
+        └── autostart.py    # Início automático com o sistema
 ```
 
 ## 🤝 Contribuindo

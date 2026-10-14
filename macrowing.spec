@@ -1,20 +1,35 @@
 # -*- mode: python ; coding: utf-8 -*-
-# MacroWing PyInstaller spec file
+# MacroWing PyInstaller spec file (Windows e Linux)
+import sys
 
 block_cipher = None
+
+_is_windows = sys.platform == "win32"
+
+hiddenimports = [
+    'PyQt6.QtWidgets',
+    'PyQt6.QtCore',
+    'PyQt6.QtGui',
+]
+
+# Backend de input do pynput depende da plataforma.
+if _is_windows:
+    hiddenimports += [
+        'pynput.keyboard._win32',
+        'pynput.mouse._win32',
+    ]
+else:
+    hiddenimports += [
+        'pynput.keyboard._xorg',
+        'pynput.mouse._xorg',
+    ]
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=[
-        'pynput.keyboard._win32',
-        'pynput.mouse._win32',
-        'PyQt6.QtWidgets',
-        'PyQt6.QtCore',
-        'PyQt6.QtGui',
-    ],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -47,5 +62,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    uac_admin=True,  # Solicita privilégios de admin
+    **({'uac_admin': True} if _is_windows else {}),
 )

@@ -1,7 +1,6 @@
 """
 Widget de gravação de macros.
 """
-import keyboard
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QCheckBox, QProgressBar, QFrame, QDialog, QSpinBox
@@ -10,6 +9,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 
 from ..core.macro import Macro, MacroAction
 from ..core.recorder import MacroRecorder
+from ..core.hotkey_backend import GlobalHotkey
 
 
 class MacroRecorderDialog(QDialog):
@@ -25,6 +25,7 @@ class MacroRecorderDialog(QDialog):
         
         self._recorder = MacroRecorder()
         self._recorder.on_action_recorded = self._on_action_recorded
+        self._stop_hotkey = GlobalHotkey()
         self._action_count = 0
         self._countdown_value = 3
         
@@ -178,10 +179,7 @@ class MacroRecorderDialog(QDialog):
         self._recorder.record_key_release = self.record_release_check.isChecked()
         
         # Registra hotkey global para parar (F10)
-        try:
-            keyboard.add_hotkey('f10', self._on_stop_hotkey, suppress=True)
-        except Exception:
-            pass  # Ignora se não conseguir registrar
+        self._stop_hotkey.register('f10', self._on_stop_hotkey, suppress=True)
         
         # Inicia
         self._recorder.start()
@@ -204,10 +202,7 @@ class MacroRecorderDialog(QDialog):
     def _stop_recording(self) -> None:
         """Para a gravação."""
         # Remove hotkey global
-        try:
-            keyboard.remove_hotkey('f10')
-        except Exception:
-            pass  # Ignora se não estava registrada
+        self._stop_hotkey.unregister('f10')
         
         # Para timers
         self._blink_timer.stop()
@@ -265,10 +260,8 @@ class MacroRecorderDialog(QDialog):
     def closeEvent(self, event):
         """Garante que a gravação para ao fechar."""
         # Remove hotkey global
-        try:
-            keyboard.remove_hotkey('f10')
-        except Exception:
-            pass
+        self._stop_hotkey.unregister('f10')
+        self._stop_hotkey.close()
         
         self._countdown_timer.stop()
         if self._recorder.is_recording:

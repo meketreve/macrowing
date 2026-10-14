@@ -23,6 +23,7 @@ from ..core.storage import MacroStorage
 from ..core.player import MacroPlayer, EasingType
 from ..core.hotkey_manager import HotkeyManager
 from ..utils.helpers import get_settings_file
+from ..utils.autostart import set_autostart
 
 _EASING_MAP = {
     0: EasingType.LINEAR,
@@ -237,6 +238,12 @@ class MainWindow(QMainWindow):
         self._settings.setdefault("smooth_mouse_min_duration", 50)
         self._settings.setdefault("smooth_mouse_max_duration", 800)
         self._settings.setdefault("smooth_mouse_easing_index", 2)
+        
+        # Migra a antiga chave "start_with_windows" para "start_with_system"
+        if "start_with_system" not in self._settings:
+            self._settings["start_with_system"] = self._settings.pop(
+                "start_with_windows", False
+            )
         
         # Aplica configurações
         self._hotkey_manager.panic_key = self._settings.get("panic_key", "escape")
@@ -483,6 +490,10 @@ class MainWindow(QMainWindow):
         """Quando as configurações são alteradas."""
         self._settings = settings
         self._save_settings()
+        
+        # Aplica inicialização automática com o sistema
+        if not set_autostart(settings.get("start_with_system", False)):
+            self._update_status("Não foi possível configurar a inicialização automática")
         
         # Aplica configuração de hotkey de pânico
         self._hotkey_manager.panic_key = settings.get("panic_key", "escape")

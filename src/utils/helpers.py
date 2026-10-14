@@ -11,7 +11,8 @@ def get_data_dir() -> Path:
     if sys.platform == "win32":
         base = Path(os.environ.get("APPDATA", Path.home()))
     else:
-        base = Path.home() / ".config"
+        # Segue o padrão XDG quando disponível (~/.config por padrão)
+        base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
     
     data_dir = base / "MacroWing"
     data_dir.mkdir(parents=True, exist_ok=True)

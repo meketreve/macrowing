@@ -50,8 +50,16 @@ class SettingsDialog(QDialog):
         self.minimize_to_tray_check = QCheckBox("Minimizar para bandeja ao fechar")
         behavior_layout.addRow(self.minimize_to_tray_check)
         
-        self.start_with_windows_check = QCheckBox("Iniciar com o Windows")
-        behavior_layout.addRow(self.start_with_windows_check)
+        startup_label = (
+            "Iniciar com o Windows"
+            if sys.platform == "win32"
+            else "Iniciar com o sistema"
+        )
+        self.start_with_system_check = QCheckBox(startup_label)
+        self.start_with_system_check.setToolTip(
+            "Adiciona o MacroWing à inicialização automática do sistema."
+        )
+        behavior_layout.addRow(self.start_with_system_check)
         
         general_layout.addWidget(behavior_group)
         
@@ -221,8 +229,11 @@ class SettingsDialog(QDialog):
         self.minimize_to_tray_check.setChecked(
             self._settings.get("minimize_to_tray", True)
         )
-        self.start_with_windows_check.setChecked(
-            self._settings.get("start_with_windows", False)
+        self.start_with_system_check.setChecked(
+            self._settings.get(
+                "start_with_system",
+                self._settings.get("start_with_windows", False),
+            )
         )
         self.panic_key_edit.setText(
             self._settings.get("panic_key", "escape")
@@ -258,7 +269,7 @@ class SettingsDialog(QDialog):
         return {
             "start_minimized": self.start_minimized_check.isChecked(),
             "minimize_to_tray": self.minimize_to_tray_check.isChecked(),
-            "start_with_windows": self.start_with_windows_check.isChecked(),
+            "start_with_system": self.start_with_system_check.isChecked(),
             "panic_key": self.panic_key_edit.text(),
             "default_record_movement": self.default_record_movement.isChecked(),
             "default_record_release": self.default_record_release.isChecked(),
